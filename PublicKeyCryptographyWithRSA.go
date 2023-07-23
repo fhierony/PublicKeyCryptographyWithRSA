@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"time"
 )
@@ -13,29 +12,47 @@ var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 const numTests = 20
 
 func main() {
-	testKnownValues()
+	random.Seed(time.Now().UnixNano())
+
+	p := findPrime(10_000, 50_000, numTests)
+	q := findPrime(10_000, 50_000, numTests)
+	n := p * q
+
+	t := totient(p, q)
+	e := randomExponent(t)
+	d := inverseMod(e, t)
+
+	fmt.Println("*** Public ***")
+	fmt.Println("Public key modulus:", n)
+	fmt.Println("Public key exponent e:", e)
+
+	fmt.Println()
+	fmt.Println("*** Private ***")
+	fmt.Printf("Primes:\t%d, %d\n", p, q)
+	fmt.Println("λ(n):", t)
+	fmt.Println("d:", d)
 
 	fmt.Println()
 
 	for {
-		var digits int
+		var message int64
 
-		fmt.Print("Enter digits : ")
-		if _, err := fmt.Scanln(&digits); err != nil {
+		fmt.Print("Message: ")
+		if _, err := fmt.Scanln(&message); err != nil {
 			fmt.Println("Error: ", err)
 		}
 
-		if digits < 1 {
+		if message < 1 || message > n-1 {
 			break
 		}
 
-		min := int64(math.Pow(float64(10), float64(digits-1)))
-		max := min * 10
+		// Encryption
+		cipherText := fastExpMod(message, e, n)
+		fmt.Printf("Ciphertext: %d\n", cipherText)
 
-		if min == 1 {
-			min = 2
-		}
-		fmt.Printf("Prime: %d\n\n", findPrime(min, max, numTests))
+		// Decryption
+		plainText := fastExpMod(cipherText, d, n)
+		fmt.Printf("Plaintext: %d\n\n", plainText)
 	}
 }
 
@@ -81,36 +98,66 @@ func findPrime(min, max int64, numTests int) int64 {
 	}
 }
 
-func testKnownValues() {
-	primes := []int{
-		10009, 11113, 11699, 12809, 14149,
-		15643, 17107, 17881, 19301, 19793,
-	}
-	composites := []int{
-		10323, 11397, 12212, 13503, 14599,
-		16113, 17547, 17549, 18893, 19999,
+// Calculate the totient function λ(n)
+// where n = p * q and p and q are prime.
+func totient(p, q int64) int64 {
+	return lcm(p-1, q-1)
+}
+
+func gcd(a, b int64) int64 {
+	if a < 0 {
+		a = -a
 	}
 
-	fmt.Printf("Probability: %f%%\n", (1-1/math.Pow(float64(2), float64(numTests)))*100)
-	fmt.Println()
+	if b < 0 {
+		b = -b
+	}
 
-	fmt.Println("Primes:")
-	for _, prime := range primes {
-		fmt.Printf("%d", prime)
-		if isProbablyPrime(int64(prime), numTests) {
-			fmt.Printf("\tPrime")
+	for a != b {
+		if a > b {
+			a -= b
+		} else {
+			b -= a
 		}
-		fmt.Println()
 	}
 
-	fmt.Println()
+	return a
+}
 
-	fmt.Println("Composites:")
-	for _, composite := range composites {
-		fmt.Printf("%d", composite)
-		if !isProbablyPrime(int64(composite), numTests) {
-			fmt.Printf("\tComposite")
+func lcm(a, b int64) int64 {
+	return b / gcd(a, b) * a
+}
+
+// Pick a random exponent e in the range (2, λ_n)
+// such that gcd(e, λ_n) = 1.
+func randomExponent(lambdaN int64) int64 {
+	for {
+		e := randRange(2, lambdaN)
+		if gcd(e, lambdaN) == 1 {
+			return e
 		}
-		fmt.Println()
 	}
+}
+
+func inverseMod(a, mod int64) int64 {
+	var t int64 = 0
+	var newT int64 = 1
+	r := mod
+	newR := a
+
+	for newR != 0 {
+		quotient := r / newR
+		t, newT = newT, t-quotient*newT
+		r, newR = newR, r-quotient*newR
+	}
+
+	if r > 1 {
+		panic("a is not invertible")
+	}
+
+	if t < 0 {
+		t += mod
+	}
+
+	return t
 }
