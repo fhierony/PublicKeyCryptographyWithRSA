@@ -1,49 +1,65 @@
 package main
 
-import "fmt"
-
-func gcd(a, b int64) int64 {
-	if a < 0 {
-		a = -a
-	}
-
-	if b < 0 {
-		b = -b
-	}
-
-	for a != b {
-		if a > b {
-			a -= b
-		} else {
-			b -= a
-		}
-	}
-
-	return a
-}
-
-func lcm(a, b int64) int64 {
-	return b / gcd(a, b) * a
-}
+import (
+	"fmt"
+	"math"
+)
 
 func main() {
 	for {
-		var a, b int64
+		var num, pow, mod int64
 
-		fmt.Print("Enter A : ")
-		if _, err := fmt.Scanln(&a); err != nil {
+		fmt.Print("Enter num : ")
+		if _, err := fmt.Scanln(&num); err != nil {
 			fmt.Println("Error: ", err)
 		}
 
-		fmt.Print("Enter B : ")
-		if _, err := fmt.Scanln(&b); err != nil {
+		fmt.Print("Enter pow : ")
+		if _, err := fmt.Scanln(&pow); err != nil {
 			fmt.Println("Error: ", err)
 		}
 
-		if a < 0 || b < 0 {
+		fmt.Print("Enter mod : ")
+		if _, err := fmt.Scanln(&mod); err != nil {
+			fmt.Println("Error: ", err)
+		}
+
+		if num < 0 || pow < 0 || mod < 0 {
 			break
 		}
 
-		fmt.Printf("A = %d, B = %d, GCD(A,B) = %d, LCM(A,B) = %d\n", a, b, gcd(a, b), lcm(a, b))
+		numPowMathPow := math.Pow(float64(num), float64(pow))
+		fmt.Println("num ^ pow")
+		fmt.Println("fastExp() : ", fastExp(num, pow))
+		fmt.Println("math.Pow() : ", int64(numPowMathPow))
+
+		fmt.Println("num ^ pow % mod")
+		fmt.Println("fastExpMod() : ", fastExpMod(num, pow, mod))
+		fmt.Println("math.Pow() : ", int64(numPowMathPow)%mod)
 	}
+}
+
+// Use fast exponentiation to calculate num ^ pow.
+func fastExp(num, pow int64) int64 {
+	var result int64 = 1
+	for pow > 0 {
+		if pow%2 == 1 {
+			result *= num
+		}
+		pow /= 2
+		num *= num
+	}
+	return result
+}
+
+func fastExpMod(num, pow, mod int64) int64 {
+	var result int64 = 1
+	for pow > 0 {
+		if pow%2 == 1 {
+			result = result * num % mod
+		}
+		pow /= 2
+		num *= num % mod
+	}
+	return result
 }
