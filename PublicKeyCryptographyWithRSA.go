@@ -2,64 +2,76 @@ package main
 
 import (
 	"fmt"
-	"math"
+	"time"
 )
 
 func main() {
-	for {
-		var num, pow, mod int64
+	var max int
+	fmt.Printf("Max: ")
+	if _, err := fmt.Scan(&max); err != nil {
+		fmt.Println("Error: ", err)
+	}
 
-		fmt.Print("Enter num : ")
-		if _, err := fmt.Scanln(&num); err != nil {
-			fmt.Println("Error: ", err)
-		}
+	start := time.Now()
+	sieve := sieveOfEratosthenes(max)
+	elapsed := time.Since(start)
+	fmt.Printf("Elapsed: %f seconds\n", elapsed.Seconds())
 
-		fmt.Print("Enter pow : ")
-		if _, err := fmt.Scanln(&pow); err != nil {
-			fmt.Println("Error: ", err)
-		}
+	if max <= 1000 {
+		printSieve(sieve)
 
-		fmt.Print("Enter mod : ")
-		if _, err := fmt.Scanln(&mod); err != nil {
-			fmt.Println("Error: ", err)
-		}
-
-		if num < 0 || pow < 0 || mod < 0 {
-			break
-		}
-
-		numPowMathPow := math.Pow(float64(num), float64(pow))
-		fmt.Println("num ^ pow")
-		fmt.Println("fastExp() : ", fastExp(num, pow))
-		fmt.Println("math.Pow() : ", int64(numPowMathPow))
-
-		fmt.Println("num ^ pow % mod")
-		fmt.Println("fastExpMod() : ", fastExpMod(num, pow, mod))
-		fmt.Println("math.Pow() : ", int64(numPowMathPow)%mod)
+		primes := sieveToPrimes(sieve)
+		fmt.Println(primes)
 	}
 }
 
-// Use fast exponentiation to calculate num ^ pow.
-func fastExp(num, pow int64) int64 {
-	var result int64 = 1
-	for pow > 0 {
-		if pow%2 == 1 {
-			result *= num
-		}
-		pow /= 2
-		num *= num
+// Build a sieve of Eratosthenes.
+func sieveOfEratosthenes(max int) []bool {
+	prime := make([]bool, max+1)
+
+	if max < 2 {
+		return prime
 	}
-	return result
+
+	prime[2] = true
+	for i := 3; i <= max; i += 2 {
+		prime[i] = true
+	}
+
+	for i := 3; i*i <= max; i++ {
+		if prime[i] {
+			for j := i * 3; j <= max; j += i {
+				prime[j] = false
+			}
+		}
+	}
+
+	return prime
 }
 
-func fastExpMod(num, pow, mod int64) int64 {
-	var result int64 = 1
-	for pow > 0 {
-		if pow%2 == 1 {
-			result = result * num % mod
-		}
-		pow /= 2
-		num *= num % mod
+func printSieve(sieve []bool) {
+	if len(sieve) > 2 {
+		fmt.Printf("2 ")
 	}
-	return result
+	for i := 3; i < len(sieve); i += 2 {
+		if sieve[i] {
+			fmt.Printf("%d ", i)
+		}
+	}
+	fmt.Println()
+}
+
+func sieveToPrimes(sieve []bool) interface{} {
+	var primes []int
+
+	if len(sieve) > 2 {
+		primes = append(primes, 2)
+	}
+	for i := 3; i < len(sieve); i += 2 {
+		if sieve[i] {
+			primes = append(primes, i)
+		}
+	}
+
+	return primes
 }
