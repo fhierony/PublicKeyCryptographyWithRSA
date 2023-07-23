@@ -13,14 +13,20 @@ func main() {
 	}
 
 	start := time.Now()
-	sieve := sieveOfEratosthenes(max)
+	eratosthenesSieve := sieveOfEratosthenes(max)
 	elapsed := time.Since(start)
-	fmt.Printf("Elapsed: %f seconds\n", elapsed.Seconds())
+	fmt.Printf("Sieve of Eratosthenes\nElapsed: %f seconds\n", elapsed.Seconds())
+
+	start = time.Now()
+	eulerSieve := eulersSieve(max)
+	elapsed = time.Since(start)
+	fmt.Printf("Euler's sieve\nElapsed: %f seconds\n", elapsed.Seconds())
 
 	if max <= 1000 {
-		printSieve(sieve)
+		printSieve(eratosthenesSieve)
+		printSieve(eulerSieve)
 
-		primes := sieveToPrimes(sieve)
+		primes := sieveToPrimes(eratosthenesSieve)
 		fmt.Println(primes)
 	}
 }
@@ -74,4 +80,34 @@ func sieveToPrimes(sieve []bool) interface{} {
 	}
 
 	return primes
+}
+
+// Build an Euler’s Sieve.
+func eulersSieve(max int) []bool {
+	prime := make([]bool, max+1)
+
+	if max < 2 {
+		return prime
+	}
+
+	prime[2] = true
+	for i := 3; i <= max; i += 2 {
+		prime[i] = true
+	}
+
+	for i := 3; i*i <= max; i += 2 {
+		if prime[i] {
+			maxQuotient := max / i
+			if maxQuotient%2 == 0 {
+				maxQuotient--
+			}
+			for j := maxQuotient; j >= i; j -= 2 {
+				if prime[j] {
+					prime[i*j] = false
+				}
+			}
+		}
+	}
+
+	return prime
 }
