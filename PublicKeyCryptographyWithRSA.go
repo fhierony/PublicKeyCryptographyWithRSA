@@ -5,81 +5,86 @@ import (
 	"time"
 )
 
+var primes []int
+
 func main() {
-	var max int
-	fmt.Printf("Max: ")
-	if _, err := fmt.Scan(&max); err != nil {
-		fmt.Println("Error: ", err)
-	}
+	primes = sieveToPrimes(eulersSieve(20_000_000))
 
-	start := time.Now()
-	eratosthenesSieve := sieveOfEratosthenes(max)
-	elapsed := time.Since(start)
-	fmt.Printf("Sieve of Eratosthenes\nElapsed: %f seconds\n", elapsed.Seconds())
+	for {
+		var num int
 
-	start = time.Now()
-	eulerSieve := eulersSieve(max)
-	elapsed = time.Since(start)
-	fmt.Printf("Euler's sieve\nElapsed: %f seconds\n", elapsed.Seconds())
+		fmt.Print("Enter num : ")
+		if _, err := fmt.Scanln(&num); err != nil {
+			fmt.Println("Error: ", err)
+		}
 
-	if max <= 1000 {
-		printSieve(eratosthenesSieve)
-		printSieve(eulerSieve)
+		if num < 2 {
+			break
+		}
 
-		primes := sieveToPrimes(eratosthenesSieve)
-		fmt.Println(primes)
+		// Find the factors the slow way.
+		start := time.Now()
+		factors := findFactors(num)
+		elapsed := time.Since(start)
+		fmt.Printf("findFactors: %f seconds\n", elapsed.Seconds())
+		fmt.Printf("Prime factors of %d are : %v\n", num, factors)
+		fmt.Println("Multiplication of prime factors =", multiplySlice(factors))
+		fmt.Println()
+
+		// Use the Euler's sieve to find the factors.
+		start = time.Now()
+		factors = findFactorsSieve(num)
+		elapsed = time.Since(start)
+		fmt.Printf("findFactorsSieve: %f seconds\n", elapsed.Seconds())
+		fmt.Printf("Prime factors of %d are : %v\n", num, factors)
+		fmt.Println("Multiplication of prime factors =", multiplySlice(factors))
+		fmt.Println()
 	}
 }
 
-// Build a sieve of Eratosthenes.
-func sieveOfEratosthenes(max int) []bool {
-	prime := make([]bool, max+1)
+func findFactors(num int) []int {
+	var primeFactors []int
 
-	if max < 2 {
-		return prime
+	for num%2 == 0 {
+		primeFactors = append(primeFactors, 2)
+		num /= 2
 	}
 
-	prime[2] = true
-	for i := 3; i <= max; i += 2 {
-		prime[i] = true
-	}
-
-	for i := 3; i*i <= max; i++ {
-		if prime[i] {
-			for j := i * 3; j <= max; j += i {
-				prime[j] = false
-			}
+	for i := 3; i*i <= num; i = i + 2 {
+		for num%i == 0 {
+			primeFactors = append(primeFactors, i)
+			num /= i
 		}
 	}
 
-	return prime
+	if num > 2 {
+		primeFactors = append(primeFactors, num)
+	}
+
+	return primeFactors
 }
 
-func printSieve(sieve []bool) {
+func multiplySlice(primeFactors []int) int {
+	num := 1
+	for _, factor := range primeFactors {
+		num *= factor
+	}
+	return num
+}
+
+func sieveToPrimes(sieve []bool) []int {
+	var primesSlice []int
+
 	if len(sieve) > 2 {
-		fmt.Printf("2 ")
+		primesSlice = append(primesSlice, 2)
 	}
 	for i := 3; i < len(sieve); i += 2 {
 		if sieve[i] {
-			fmt.Printf("%d ", i)
-		}
-	}
-	fmt.Println()
-}
-
-func sieveToPrimes(sieve []bool) interface{} {
-	var primes []int
-
-	if len(sieve) > 2 {
-		primes = append(primes, 2)
-	}
-	for i := 3; i < len(sieve); i += 2 {
-		if sieve[i] {
-			primes = append(primes, i)
+			primesSlice = append(primesSlice, i)
 		}
 	}
 
-	return primes
+	return primesSlice
 }
 
 // Build an Euler’s Sieve.
@@ -110,4 +115,27 @@ func eulersSieve(max int) []bool {
 	}
 
 	return prime
+}
+
+func findFactorsSieve(num int) []int {
+	var primeFactors []int
+
+	for num%2 == 0 {
+		primeFactors = append(primeFactors, 2)
+		num /= 2
+	}
+
+	for i := 1; i < len(primes); i++ {
+		prime := primes[i]
+		for num%prime == 0 {
+			primeFactors = append(primeFactors, prime)
+			num /= prime
+		}
+	}
+
+	if num > 2 {
+		primeFactors = append(primeFactors, num)
+	}
+
+	return primeFactors
 }
